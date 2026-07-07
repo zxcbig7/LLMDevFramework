@@ -1,7 +1,6 @@
 {
-  "$schema": "./deploy.config.schema.json",
-  "version": "1.0.0",
-  "description": "LLMDevFramework deploy manifest. install.ps1 / update.ps1 / uninstall.ps1 read this as single source of truth.",
+  "version": "2.0.0",
+  "description": "LLMDevFramework 部署清單 single source。由 BOOTSTRAP.md（AI 適配）寫入 ~/.claude/，由 /harness-doctor 對帳。自 scripts/deploy.config.json 遷移（2026-07-03）。",
   "items": [
     {
       "id": "cmd-sdd",
@@ -58,6 +57,54 @@
       "dst": "commands/scaffold.md",
       "transform": "substitute-framework-path",
       "description": "/scaffold — 半自動產生專案 CLAUDE.md（reference 框架）"
+    },
+    {
+      "id": "cmd-harness-eval",
+      "type": "command",
+      "src": "harness-eval/harness-eval-command.md",
+      "dst": "commands/harness-eval.md",
+      "transform": "substitute-framework-path",
+      "description": "/harness-eval — domain 行為評測 runner（框架的 unit test）"
+    },
+    {
+      "id": "cmd-harness-doctor",
+      "type": "command",
+      "src": "bootstrap/harness-doctor-command.md",
+      "dst": "commands/harness-doctor.md",
+      "transform": "substitute-framework-path",
+      "description": "/harness-doctor — 框架三方對帳（七項檢查，read-only）"
+    },
+    {
+      "id": "cmd-code-review",
+      "type": "command",
+      "src": "code-review/code-review-command.md",
+      "dst": "commands/code-review.md",
+      "transform": "none",
+      "description": "/code-review — CodeMap 前置 + 獨立 evaluator review"
+    },
+    {
+      "id": "skill-mermaid-diagrams",
+      "type": "skill",
+      "src": "Mermaid Diagrams/",
+      "dst": "skills/mermaid-diagrams/",
+      "files": ["SKILL.md", "references/"],
+      "description": "mermaid-diagrams skill — 專業 Mermaid 製圖"
+    },
+    {
+      "id": "skill-slide-builder",
+      "type": "skill",
+      "src": "Slide Builder/",
+      "dst": "skills/slide-builder/",
+      "files": ["SKILL.md", "references/"],
+      "description": "slide-builder skill — 投影片 orchestrator（路由 pptx / guizang HTML）"
+    },
+    {
+      "id": "skill-milp-dev",
+      "type": "skill",
+      "src": "workflow skill/",
+      "dst": "skills/milp-dev/",
+      "files": ["SKILL.md"],
+      "description": "milp-dev skill — MILP 建模三階段 orchestrator（Model Design → Foundation Coding → Foundation Tuning）"
     }
   ]
 }

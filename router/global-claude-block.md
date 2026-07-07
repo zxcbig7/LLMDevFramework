@@ -18,6 +18,7 @@
 | `.ps1` | `$FW/PowerShell/CLAUDE.md` |
 | `.tsx` `.ts` + `package.json` | `$FW/React & Typescript/CLAUDE.md` |
 | `.cs` + `.csproj` | `$FW/.Net Web API/CLAUDE.md` |
+| `.cs` + 參考 OptimFoundation.Core/Cplex | `$FW/MILP Model/CLAUDE.md`（優先於 .Net Web API）|
 | `.yaml`（k8s/helm/argo/gha）| `$FW/YAML Review/CLAUDE.md` |
 
 **任務情境 → skill / command**
@@ -32,6 +33,7 @@
 | 要畫圖 | `mermaid-diagrams` skill |
 | 做投影片 / 網頁 deck | `guizang-ppt-skill` |
 | 改善一段 prompt | `/prompt-improve` |
+| 建模 / 最佳化題目（LP/IP/MILP）/ 模型 tuning | `milp-dev` skill（規範：`$FW/MILP Model/CLAUDE.md`）|
 
 **新專案自舉**：進到沒有 `CLAUDE.md` 的專案 → 主動建議 `/scaffold`（偵測技術棧 → 列要寫的檔 → 確認 → 寫 root + 技術獨立子資料夾的 CLAUDE.md，reference `$FW`）。
 <!-- LLMDEVFRAMEWORK:ROUTER END -->

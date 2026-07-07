@@ -29,7 +29,7 @@ router/subfolder-claude-template.md - 子資料夾 CLAUDE.md 模板
 3. 用 START/END marker 取代 `~/.claude/CLAUDE.md` 內舊區塊；沒有就 append
 
 **裝 `/scaffold`**：`scaffold-command.md` → `~/.claude/commands/scaffold.md`，替換 `{{FRAMEWORK_PATH}}`
-（以上由 `scripts/install.ps1` 自動化；execution policy 鎖死時手動，見 `scripts/MANUAL-INSTALL.md`）
+（以上由 root `BOOTSTRAP.md` 的 AI 適配流程執行，不依賴安裝腳本、不受 execution policy 影響）
 </paved_path>
 
 <hatch>

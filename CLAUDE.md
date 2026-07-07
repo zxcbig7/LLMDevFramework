@@ -10,6 +10,8 @@ LLM 開發框架與規範庫，存放各語言/技術棧的 Claude Code 開發�
 - MUST 寫 / 改任何 CLAUDE.md 或 slash command 前先讀 `prompt-principles/CLAUDE.md`，寫完跑 self-check
 - MUST 讀任何 domain CLAUDE.md 或做框架級改動後，同步更新 root `CodeMap.md`（File Index 行數 + Coverage Assessment）
   Why: CodeMap 是跨 session 的導覽地圖，不更新就會過時，下次開發還是要從頭找
+- MUST 改任何有 `evals/` 的 domain CLAUDE.md 後跑 `/harness-eval <domain>` 驗證行為
+  Why: 沒 eval 的規範改動是憑感覺，無 regression 檢測（框架的 unit test）
 - 規範文件用 terse but complete 風格，100–200 行為上限
 - 規則用字：MUST / NEVER / ALWAYS；重要規則用「NEVER X — ALWAYS Y — Why: Z」三段式
 - DRY：用 file reference / 巢狀 CLAUDE.md，不要重複內容
@@ -32,6 +34,11 @@ Mermaid Diagrams/       - 專業 Mermaid 製圖規範 + `mermaid-diagrams` skill
 CMD Developer/          - Windows batch `.bat` 開發規範 + `/cmd-dev`（9 大雷區）
 PowerShell/             - PowerShell `.ps1` 開發規範 + `.bat` vs `.ps1` 選用決策（與 CMD Developer 並列）
 router/                 - 自適應分派層：Router 區塊注入全域 CLAUDE.md（語言→domain + 任務→skill）+ `/scaffold` 半自動產專案 CLAUDE.md
+harness-eval/           - 框架行為評測（behavioral eval）：case 模板 + `/harness-eval` runner——框架的 unit test
+bootstrap/              - 可攜層：inventory.json 部署清單 + `/harness-doctor` 三方對帳；AI 適配入口在 root `BOOTSTRAP.md`
+code-review/            - `/code-review` source：CodeMap 前置 + 獨立 evaluator subagent review
+MILP Model/             - MILP 數學模型開發 domain（服務 OptimizationFramework / OptimFoundation CPLEX）：三階段天條 + 三 phase 子規範 + evals
+workflow skill/         - milp-dev skill：三階段 phase gate orchestrator + status.json resume（規範單一來源在 MILP Model/）
 </file_map>
 
 <paved_path>

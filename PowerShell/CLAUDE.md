@@ -82,7 +82,7 @@ if ($LASTEXITCODE -ne 0) { throw "git clone 失敗 ($LASTEXITCODE)" }
 - ⚠️ **5.1 與 7 的 `-Encoding utf8` 意義不同**：5.1 = with BOM；7 = **no** BOM。要 BOM 明確：7 用 `utf8BOM`
 - 寫含中文 → 5.1：`Set-Content -Encoding UTF8`；7：`Set-Content -Encoding utf8BOM`
 - console 中文亂碼 → `[Console]::OutputEncoding = [Text.Encoding]::UTF8`（必要時 `chcp 65001`）
-- 編輯器 / 工具重存掉 BOM 的補救（scripts/README 那招）：
+- 編輯器 / 工具重存掉 BOM 的補救：
 
 ```powershell
 $c = Get-Content .\x.ps1 -Raw -Encoding UTF8
@@ -121,7 +121,7 @@ Set-Content .\x.ps1 -Value $c -Encoding utf8BOM -NoNewline   # 5.1 用 -Encoding
 
 ### 雷區 7：execution policy fallback（不能跑 .ps1 時）
 - 公司鎖 Restricted → `.ps1` 直跑被擋
-- fallback：① 指令貼進 PS 視窗**互動執行**（不受 policy）② `powershell -ExecutionPolicy Bypass -File x.ps1`（單次，留意公司政策）③ 純手動（見 `scripts/MANUAL-INSTALL.md`）
+- fallback：① 指令貼進 PS 視窗**互動執行**（不受 policy）② `powershell -ExecutionPolicy Bypass -File x.ps1`（單次，留意公司政策）③ 改讓 AI 直接以 tool 操作完成（本框架 BOOTSTRAP 哲學：能不跑腳本就不跑）
 - NEVER 教人全域 `Set-ExecutionPolicy Unrestricted`（降全機防線）
 </patterns>
 
@@ -130,7 +130,7 @@ Set-Content .\x.ps1 -Value $c -Encoding utf8BOM -NoNewline   # 5.1 用 -Encoding
 - **跑既有 .ps1** → `pwsh -File x.ps1`（7）/ `powershell -File x.ps1`（5.1）
 - **含中文存檔亂碼** → 用雷區 1 補救一行重存 BOM
 - **從 .bat 呼叫 PS** → 見 `CMD Developer/CLAUDE.md` 雷區 6
-- **參考實作** → `scripts/install.ps1`、`update.ps1`、`uninstall.ps1`、`lib.ps1`
+- **參考實作** → `Mermaid Diagrams/references/render-mermaid.ps1`
 </common_tasks>
 
 <hatch>
