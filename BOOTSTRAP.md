@@ -45,6 +45,7 @@
 1. **Router 注入**：`~/.claude/CLAUDE.md` 的 `<!-- LLMDEVFRAMEWORK:ROUTER START/END -->` 區塊內容 = `$FW/router/global-claude-block.md`（`{{FRAMEWORK_PATH}}` 已替換）。marker 區塊外**一字不動**；無 CLAUDE.md → 建檔只含 Router 區塊
 2. **Commands**：逐項 Read source → 替換 `{{FRAMEWORK_PATH}}`（`transform: substitute-framework-path` 時）→ Write 到 `~/.claude/<dst>`（Write tool，無 BOM）
 3. **Skills**：依 item 的 `files` 清單整包複製到 `~/.claude/<dst>`（含 `references/` 子目錄）
+3b. **Agents**（`type: agent`）：同 Commands 作法（單檔 Read → Write 到 `~/.claude/agents/<檔名>`，`transform: none` 原樣複製）；agent 定義重開 session 才生效
 4. **Manifest**：寫 `~/.claude/.llmdevframework.json`：
 
 ```json

@@ -35,5 +35,12 @@
 | 改善一段 prompt | `/prompt-improve` |
 | 建模 / 最佳化題目（LP/IP/MILP）/ 模型 tuning | `milp-dev` skill（規範：`$FW/MILP Model/CLAUDE.md`）|
 
+**模型調度（多步任務必讀）**
+
+任務含「掃 repo / 讀 3 檔以上找答案 / 網路研究 / 批次改檔 / 產長文件」任一項 → 先讀 `$FW/orchestration/dispatch.md`，派 subagent 做，主對話只收結論；派工 prompt 套 `$FW/orchestration/templates/` 對應模板。
+交付前驗收派 `verifier` agent、高風險判斷派 `second-opinion`、批次套用派 `batch-worker`（定義已部署在 `~/.claude/agents/`）。
+何時升級模型 / 何時算完成 / 何時停下問使用者 / 何時換路 → `$FW/orchestration/judgment.md`。
+踩坑後把教訓寫回框架 → 依 `$FW/orchestration/maintenance.md` 的規則與格式。
+
 **新專案自舉**：進到沒有 `CLAUDE.md` 的專案 → 主動建議 `/scaffold`（偵測技術棧 → 列要寫的檔 → 確認 → 寫 root + 技術獨立子資料夾的 CLAUDE.md，reference `$FW`）。
 <!-- LLMDEVFRAMEWORK:ROUTER END -->

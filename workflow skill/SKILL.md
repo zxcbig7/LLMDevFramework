@@ -15,7 +15,7 @@ description: MILP 數學模型開發 orchestrator——三階段 phase gate（Mo
 ## Step 0 · 定位（每次啟動先做）
 
 1. **讀天條**：`$FW/MILP Model/CLAUDE.md`
-2. **定位專案**：預設 `$OPT/ClaudeAIAssistant/Projects/<Project>/`（$OPT 見天條檔）；使用者另指定則從之
+2. **定位專案**：預設 `$OPT/AI-Modeling/Projects/<Project>/`（$OPT 見天條檔）；使用者另指定則從之
 3. **判斷目前 phase**（resume，不重跑已完成的工作）：
 
 | 現況 | Phase |
@@ -38,7 +38,7 @@ description: MILP 數學模型開發 orchestrator——三階段 phase gate（Mo
 ## Phase 2 · Foundation Coding（純機械轉譯）
 
 1. 讀 `$FW/MILP Model/Foundation Coding/CLAUDE.md`
-2. 依轉譯順序逐條翻譯 Model.md：Parameter → Dataload → Variable → Constraint → Objective → BuildModel → Program
+2. 依轉譯順序逐條翻譯 Model.md：Parameter → Dataload → Variable → Constraint → Objective → Program.cs（`CreateVariables` + `BuildModel` local function，不另開包裝類別）
 3. 轉譯中發現 Model.md 歧義 → **立即停止**回 Phase 1，NEVER 自行假設
 4. `dotnet build` → fix loop ≤ 5 次 → `dotnet run` → 解驗證協定（Status 三分診斷 → 可行性代回 → 單位一致 → LP bound sanity，見 Foundation Coding）
 5. 回報：build 結果、目標值、解摘要、輸出檔位置；更新 `status.json`
@@ -79,5 +79,5 @@ description: MILP 數學模型開發 orchestrator——三階段 phase gate（Mo
 
 - NEVER 模型未確認就產 `.cs`（使用者明說「模型我確認過了直接寫」視同通過 gate）
 - NEVER 移項 / 改號 / 翻轉比較方向 / 四捨五入數值
-- NEVER 憑記憶發明 OptimFoundation API——簽名疑慮查 `$OPT/ClaudeAIAssistant/CPLEX_API_REFERENCE.md`
+- NEVER 憑記憶發明 OptimFoundation API——簽名疑慮查 `$OPT/AI-Modeling/CPLEX_API_REFERENCE.md`
 - NEVER 跳過 status.json 導致下次 session 重跑

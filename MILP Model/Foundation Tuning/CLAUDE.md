@@ -4,12 +4,14 @@
 三階段的第三階段：模型會動之後的調校。**使用者提出才做，不主動建議。**
 任何涉及模型調整（結構 / 數值 / solver 參數任一）MUST 先讀本檔再動手。
 天條（正確性 gate、NEVER 移項改號、語意變更同步 Model.md）見 `../CLAUDE.md`。
-完整協定與旋鈕全表：`$OPT/AI Modeling - Claude Code/specs/2026-06-21-model-tuning-protocol.md` + 其 CLAUDE.md「可調 Solver 旋鈕全表」。
+完整協定：`$OPT/AI-Modeling/automated/specs/2026-06-21-model-tuning-protocol.md`；solver 旋鈕全表：`$OPT/AI-Modeling/tuning/CLAUDE.md`。
 </system_context>
 
 <critical_notes>
 - MUST 測試流程正確性優先：先過 `Foundation Coding/CLAUDE.md` 的**解驗證協定**（Status 三分診斷 → 可行性代回 → 單位一致 → LP bound sanity）才進效能 tuning —— Why: 調快一個錯的模型毫無意義
 - MUST 依觸發類型走對應入口（見 paved_path 三類表），NEVER 混路（例如嫌慢就順手改約束結構）
+- MUST 「嫌慢 / gap 下不去」一律 **solver 參數優先**：`CplexConfig` 旋鈕 → IIS / soft constraint → 模型結構，NEVER 第一手就收 big-M / 降變數階 / 加對稱破除約束 —— Why: 模型已定版，動結構要回改 Model.md 並重走 Coding 轉譯，成本與風險遠高於可逆的旋鈕
+  - ⚠ `$OPT/AI-Modeling/tuning/CLAUDE.md` 檔頭的「黃金順序：模型 > 參數」**只適用建模當下**（automated Stage 4、模型未定版）；本 phase 3 是模型定版後，順序相反，以本檔為準
 - MUST 每輪 tuning 用 Experiment API 記錄（`Trial.Capture` + `Experiment.Save`），對照 `MipGap` / `WallTimeMs` / `NodeCount` / `Status` 客觀指標 —— Why: 沒有指標的調校是憑感覺，不可回溯
 - MUST tuning 前後 before/after 對照回報（目標值 + 指標）
 - MUST 影響模型語意的變更（加 slack、加/刪約束、Hard→Soft）同步更新 Model.md
@@ -61,18 +63,22 @@ ProblemType 預設起點：LP → `mipEmphasis 0 / timeLimit 300`；IP → `1 / 
 var exp = new Experiment("<Project>-tuning", "調校說明");
 foreach (var (label, tune) in variants)
 {
-    var config = new CplexConfig { timeLimit = 300 };
+    var config = NewConfig(timeLimit: 300, verbose: false);
     tune(config);
+
+    // 每個 Trial 全新 dataload + engine，狀態不跨 Trial 污染
+    var data = OptData.Load(() => new Dataload());
     using var engine = new OptEngine(config);
     engine.Build();
-    new VariableCreate(dataload, engine).Build();
-    new BuildModel(dataload, engine).Build();
+    CreateVariables(data, engine);   // ← 與 solve 模式同一份建模碼（Program.cs 的 local function）
+    BuildModel(data, engine);
     exp.AddTrial(Trial.Capture(engine, label, () => engine.Solve()));
 }
 exp.Save(); // → Experiments/<Project>-tuning.csv + .json
 ```
 
-CSV 給人對照、JSON 給後續 LLM tuning。跑法：`dotnet run -- experiment`（`ExperimentRunner.Run()`）。
+CSV 給人對照、JSON 給後續 LLM tuning。跑法：`dotnet run -- experiment`（Program.cs 的 `RunExperiment()`）。
+MUST 掃描時 `verbose: false`（關 solver log 與 LP/MPS 匯出）+ 一次只動一個旋鈕 —— Why: I/O 與多變數同動會蓋掉要量的時間差。
 
 ## good/bad：嫌慢的第一反應
 
@@ -84,7 +90,7 @@ CSV 給人對照、JSON 給後續 LLM tuning。跑法：`dotnet run -- experimen
 - 「太慢 / timeout」→ solver 路線（上表）
 - 「infeasible」→ IIS → Soft Constraint 流程
 - 「改需求 / 加規則」→ structure：回 Model.md（Phase 1 格式）→ 使用者確認 → 轉譯
-- 「跑實驗」→ ExperimentRunner + Experiment API，報 CSV 路徑與結論
+- 「跑實驗」→ Program.cs 的 `RunExperiment()` + Experiment API，報 CSV 路徑與結論
 </common_tasks>
 
 <fatal_implications>

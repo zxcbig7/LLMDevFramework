@@ -1,5 +1,5 @@
 ---
-updated: 2026-07-04
+updated: 2026-07-08
 type: framework-map
 ---
 
@@ -29,12 +29,14 @@ type: framework-map
 | code-review | `code-review/code-review-command.md` | 276 | CodeMap 前置 + 獨立 evaluator subagent review（回灌，原無 source 孤兒）| `/code-review` |
 | Slide Builder | `Slide Builder/CLAUDE.md` | 74 | 投影片 orchestrator：路由 pptx / guizang HTML + brand kit | slide-builder skill |
 | Mermaid Diagrams | `Mermaid Diagrams/CLAUDE.md` | 103 | 專業 Mermaid 製圖：base theme + 語義 classDef 美化、語法防呆、mmdc/Kroki 匯出 | mermaid-diagrams skill |
-| MILP Model | `MILP Model/CLAUDE.md` | 112 | MILP 建模天條：三階段 phase gate、命名、LHS/RHS 鐵則、禁 Hardcode、tuning gate（服務 OptimizationFramework） | milp-dev skill |
+| MILP Model | `MILP Model/CLAUDE.md` | 114 | MILP 建模天條：三階段 phase gate、命名（變數前綴 load-bearing 決定型別、OPTF001 enforce）、LHS/RHS 鐵則、禁 Hardcode、tuning gate（服務 OptimizationFramework） | milp-dev skill |
+| MILP/API Guide | `MILP Model/optimfoundation-api-guide.md` | 660 | 端到端 API 開發規範：建專案 → Set/Parameter/Dataload → Variable → Objective/Constraint → Program.cs 唯一組裝點 → 寫實驗 → 解驗證協定 → API 速查/黑名單/常見錯誤 | — |
 | MILP/Model Design | `MILP Model/Model Design/CLAUDE.md` | 124 | Phase 1 建模：4 階段降維、五段 Model.md（SET/PARAM/VAR/CONSTRAINT/OBJ）、程式轉譯 metadata、建模自驗 gate | — |
 | MILP/Linearization Patterns | `MILP Model/Model Design/linearization-patterns.md` | 79 | constraint 8 類 canonical form + 非線性→線性 recipe（abs/max/min/fixed-charge/either-or）+ Big-M 鐵律 | — |
-| MILP/Foundation Coding | `MILP Model/Foundation Coding/CLAUDE.md` | 143 | Phase 2 轉譯：五資料夾結構、generator 預設/手寫後路、Pool/取解 API、禁止 API 清單、fix loop ≤5、解驗證協定 | — |
-| MILP/Foundation Tuning | `MILP Model/Foundation Tuning/CLAUDE.md` | 95 | Phase 3 調校：正確性 gate（引用解驗證協定）、三類觸發入口、IIS→Soft、Experiment API、stop conditions | — |
+| MILP/Foundation Coding | `MILP Model/Foundation Coding/CLAUDE.md` | 171 | Phase 2 轉譯：六資料夾結構、Program.cs 唯一組裝點（禁 VariableCreate/BuildModel 包裝層）、generator 預設/手寫後路、Pool/取解 API、禁止 API 清單、fix loop ≤5、解驗證協定 | — |
+| MILP/Foundation Tuning | `MILP Model/Foundation Tuning/CLAUDE.md` | 101 | Phase 3 調校：正確性 gate（引用解驗證協定）、三類觸發入口、IIS→Soft、Experiment API（fresh dataload+engine / verbose:false / 一次一旋鈕）、stop conditions | — |
 | workflow skill | `workflow skill/SKILL.md` | 83 | milp-dev orchestrator：三階段推進 + gate 把關 + status.json resume | milp-dev skill |
+| orchestration | `orchestration/CLAUDE.md` | 41 | 模型調度 domain：dispatch（派工/升降級/驗證不自驗）+ judgment rubric + 5 派工模板 + 3 自訂 agent（verifier/second-opinion/batch-worker）+ lessons/maintenance | —（Router 模型調度段路由）|
 
 ## Dependency Graph
 
@@ -64,6 +66,7 @@ graph TD
   GZ["~/.claude/skills/<br/>guizang + pptx（被路由）"]
   MILP["MILP Model/<br/>三階段天條 + 3 phase 子規範"]
   WS["workflow skill/<br/>milp-dev orchestrator"]
+  ORCH["orchestration/<br/>模型調度 + 判斷 rubric + agents"]
   OPT["OptimizationFramework<br/>API 手冊 + 範例（外部 $OPT）"]
   CM["CodeMap.md<br/>框架地圖（本檔）"]
 
@@ -94,6 +97,9 @@ graph TD
   MILP -.->|"權威 API 參照"| OPT
   BS -.->|"Router 注入由 BOOTSTRAP 執行"| RTR
   CR -.->|"每次 review 產"| CM
+  ROOT --> ORCH
+  RTR -.->|"模型調度段路由多步任務"| ORCH
+  ORCH -.->|"agents 部署 ~/.claude/agents/"| BS
   ROOT --> SB
   ROOT --> MD
   ROOT -->|"改動後更新"| CM
@@ -126,6 +132,9 @@ graph TD
 | evaluator findings 經主 session 驗證才輸出 | code-review command | `/code-review` |
 | 三階段 phase gate：模型未確認 NEVER 產 `.cs` | MILP Model/ `<critical_notes>` | 建模題目（OptimizationFramework） |
 | LHS/RHS 鐵則：NEVER 移項 / 改號 / 翻轉方向 | MILP Model/ `<critical_notes>` | Coding / Tuning 任何模型轉譯 |
+| 掃 repo / 讀 3 檔+ / 批次改檔 → 派 subagent 不自己做 | orchestration/dispatch.md | 任何多步任務 |
+| 驗收派 fresh-context `verifier`，NEVER 自驗 | orchestration/dispatch.md | 交付宣告完成前 |
+| 踩坑當 session 寫 `lessons.md`，第 2 次才提升為條文 | orchestration/maintenance.md | 重試 2 輪 / verifier FAIL / 使用者糾正 |
 
 ## Coverage Assessment
 
@@ -147,6 +156,7 @@ graph TD
 | code-review | ✅ 回灌 + 改造 | 原無 source 孤兒已解；Phase 2 改獨立 evaluator subagent；write-tutorial / research-note 仍為孤兒（backlog）|
 | Slide Builder | ✅ skill 已裝 | slide-builder skill 已部署 `~/.claude/skills/`（2026-07-04）；pptx skill 仍需自 anthropics/skills 手動複製；HTML 路由 guizang 已就緒 |
 | Mermaid Diagrams | ✅ 完整 | mmdc 匯出需本機 Node；無 Node 走 Kroki（敏感圖勿送公開 Kroki，改自架） |
-| MILP Model | ✅ 建模科學化強化 | 2026-07-05 吸收 OMG_LLM Reasoning paper pipeline：Phase 1 改 4 階段降維（去故事化/單位 → 語義判別+Terminology → SET/PARAM/VAR/CONSTRAINT/OBJ → 自驗）、新增 linearization-patterns.md、Foundation Coding 加解驗證協定；evals 增至 6（+ semantic-discrimination / linearization / solution-verify）；`/harness-eval milp-model` 待跑（規範改動未回歸）|
+| MILP Model | ✅ 建模科學化強化 + API guide | 2026-07-05 吸收 OMG_LLM Reasoning paper pipeline：Phase 1 改 4 階段降維、新增 linearization-patterns.md、Foundation Coding 加解驗證協定；2026-08-01 新增 `optimfoundation-api-guide.md`（端到端 660 行）並把 paved path 改為「Program.cs 唯一組裝點、不開 VariableCreate/BuildModel 包裝層」，Foundation Coding / Tuning / milp-dev SKILL 已同步；evals 6 個未含新 paved path，`/harness-eval milp-model` 待跑（規範改動未回歸）|
 | workflow skill | ✅ 新建 | milp-dev 已登錄 inventory（skill-milp-dev）；需重跑 BOOTSTRAP 適配部署到 `~/.claude/skills/milp-dev/` |
 | YAML/troubleshooting | ⚠️ 薄 | Case 數量不明，建議定期盤點 |
+| orchestration | ✅ 新建（2026-07-08 Fable session） | 尚無 `evals/`——首次改 dispatch/judgment 前先建 2 cases（LETTER §2）；agents 部署需重開 session 生效；LETTER §1 待決清單需使用者處理 |

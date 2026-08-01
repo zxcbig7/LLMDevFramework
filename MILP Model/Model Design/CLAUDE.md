@@ -53,7 +53,7 @@ Role ∈ {parameter, variable, derived, constraint, objective, irrelevant}。
 ### SET
 | Set | 語意 | 成員範例 | → 程式 |
 | --- | --- | --- | --- |
-| GlassType | 玻璃種類 | Regular, Tempered | `List<string>`，由 Parameter 衍生 |
+| GlassType | 玻璃種類 | Regular, Tempered | `Set_GlassType` 積木（`[OptSet<string>]`），由 source 讀入 |
 
 ### PARAM（標 Dim → 決定 Parameter 類別 property 名）
 | Param | 語意 | Dim | 值 | → 程式 |

@@ -105,6 +105,30 @@
       "dst": "skills/milp-dev/",
       "files": ["SKILL.md"],
       "description": "milp-dev skill — MILP 建模三階段 orchestrator（Model Design → Foundation Coding → Foundation Tuning）"
+    },
+    {
+      "id": "agent-verifier",
+      "type": "agent",
+      "src": "orchestration/agents/verifier.md",
+      "dst": "agents/verifier.md",
+      "transform": "none",
+      "description": "verifier agent — fresh-context 驗收官（sonnet / effort high）"
+    },
+    {
+      "id": "agent-second-opinion",
+      "type": "agent",
+      "src": "orchestration/agents/second-opinion.md",
+      "dst": "agents/second-opinion.md",
+      "transform": "none",
+      "description": "second-opinion agent — 高風險判斷第二意見／多方案評審（opus / effort xhigh）"
+    },
+    {
+      "id": "agent-batch-worker",
+      "type": "agent",
+      "src": "orchestration/agents/batch-worker.md",
+      "dst": "agents/batch-worker.md",
+      "transform": "none",
+      "description": "batch-worker agent — 已定案 pattern 批次套用（haiku / effort medium）"
     }
   ]
 }
