@@ -4,6 +4,7 @@ status: approved（缺陷經 Explore 盤點驗證，D15/D16 刪除決策由 Vic 
 executor: 待派（照第一波模式執行，每 phase 結尾派 verifier）
 scope: `$OPT/AI-Modeling`（主）+ 條件式檢查 `$FW/MILP Model`（$OPT = `C:/Users/zxcbi/Desktop/Projects/OptimizationFramework`、$FW = LLMDevFramework repo 根）
 前情: 第一波 = `specs/2026-07-13-optim-ai-spec-consolidation.md`，4 phase 已於 2026-07-14 執行完畢（verifier PASS）。本波處理第一波**未納管而存活**的殘洞。
+superseded_by: 2026-08-01-optimfoundation-dual-config.md, 2026-08-01-optimfoundation-runner-symmetry.md, 2026-08-01-optim-docs-and-projects-migration.md
 
 > **API 定版（Vic 2026-07-15 指定，覆蓋本規格與第一波 D5 的語法描述）**：
 > 權威範例 = `$OPT/OptimFoundation/OptimFoundation/Templates/FJSP_BASIC_BRICK`（實作已 build 過、Generated/ 有 generator 輸出）。

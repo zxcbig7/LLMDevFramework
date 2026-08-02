@@ -12,7 +12,7 @@ modules: [framework-core, framework-cplex, template, projects-migration, docs]
 
 在 `OptimFoundation.Core` 新增 `ProjectConfig`（專案身分、要留哪些檔），並把 `enableLog` / `exportLP` / `exportMPS` / `exportSol` / `LogToConsole` / `LogFilePath` **從 `CplexConfig` 移除**搬進去。`CplexConfig` 之後只剩**真正的 CPLEX solver 旋鈕**，`OptModel.UseConfig` 做成兩個 overload、pipeline 各吃一次。
 
-這是 breaking change：既有 31 個 `.cs` 呼叫點會編譯失敗，需一次機械遷移（見 Migration）。
+這是 breaking change，但**本規格只負責框架 solution 內**：`OptimFoundation.sln` 底下 12 個呼叫點（Templates 9 + tests 3）當場編不過、必須同步改。`AI-Modeling` 端的 17 檔（Projects 16 + Template 1）**不在本規格範圍** —— 它們吃 `AI-Modeling/dlls/` 的 DLL 複製品，本規格**刻意不更新該複製品**，所以 8 個練習專案完全不受影響、照舊可跑。那 17 檔連同 `dlls/` 更新一起在 [`2026-08-01-optim-docs-and-projects-migration.md`](2026-08-01-optim-docs-and-projects-migration.md) 處理。
 
 ## Motivation / Why
 
@@ -31,12 +31,12 @@ modules: [framework-core, framework-cplex, template, projects-migration, docs]
 - `OptEngine`（Cplex）新增 ctor overload 收 `ProjectConfig`，改由它取得四個輸出開關
 - `OptModel` 新增 `UseConfig(Func<ProjectConfig>)` overload，與既有 `UseConfig(Func<CplexConfig>)` 並存
 - `OptModel` 把「設 log 檔名 / 清舊檔」從 ctor 延後到 `Execute()`，讓 fluent 註冊的 `ProjectConfig` 來得及生效
-- **遷移** `AI-Modeling/Projects/*`（8 專案）、`AI-Modeling/Template`、`OptimFoundation/Templates/*`、`tests/*` 共 31 個 `.cs` 呼叫點
-- 更新文件：`$FW/MILP Model/optimfoundation-api-guide.md`、`Foundation Coding|Tuning/CLAUDE.md`、`$OPT/AI-Modeling/CPLEX_API_REFERENCE.md` §4、`tuning/CLAUDE.md`
-- rebuild `OptimFoundation.Core` / `.Cplex` 並更新 `$OPT/AI-Modeling/dlls/` + `VERSION.txt`
+- **遷移框架 solution 內的 12 個呼叫點**：`OptimFoundation/Templates/*`（9 檔）+ `tests/OptimFoundation.Cplex.Tests/Integration/*`（3 檔）—— 這些與 `src/` 同一個 solution，刪欄位當下就編不過，非改不可
 
 ### Out of Scope
 
+- **`AI-Modeling` 端的一切**：`Projects/*` 16 檔、`Template/Program.cs` 1 檔、`dlls/` 更新、`VERSION.txt` 解 pin —— 全部歸 [`2026-08-01-optim-docs-and-projects-migration.md`](2026-08-01-optim-docs-and-projects-migration.md)。**本規格 MUST NOT 覆蓋 `AI-Modeling/dlls/`** —— Why: 覆蓋當下 8 個練習專案全部編不過，而它們要到最後一個 phase 才遷移，中間會有一長段不可用期間
+- **文件更新**：`$FW/MILP Model/*`、`$OPT/AI-Modeling/CPLEX_API_REFERENCE.md`、`tuning/CLAUDE.md` 等約 40 份 —— 歸同一份遷移規格
 - **檔案位置設定（輸出根目錄 / 七個子資料夾名 / 輸入 `Data/` 路徑）**：本輪完全不做。`FolderDir` 與 `Logging` 一行都不動，路徑維持今天的 `AppDomain.BaseDirectory` 固定配置。Why: 要動 `FolderDir` 的 static 欄位與 `Logging` 的 static 路徑快照，experiment 平行 trial 共用 static 有污染風險，而目前沒有實際需求
 - **`OptimFoundation.Gurobi` 的功能開發**：Gurobi 不在開發 scope。本規格對它**只做讓 solution 編得過的機械修正**——`ISolverConfig` 拿掉兩個成員後，把 `LogToConsole` / `LogFilePath` 降級為 `GurobiConfig` 自有屬性，`Gurobi/OptEngine.cs` 照舊讀它們。**不**讓 Gurobi 支援 `ProjectConfig`、**不**動 Gurobi 的輸出行為
 - `rowRead` / `workMemory` / `nodeFileInd` **留在 `CplexConfig`**：它們是實打實的 CPLEX `Param.*`（`Read.Constraints` / `WorkMem` / `MIP.Strategy.File`），屬 solver 旋鈕
@@ -56,13 +56,12 @@ modules: [framework-core, framework-cplex, template, projects-migration, docs]
 - [ ] AC2：`CplexConfig` 不再含 `enableLog` / `exportLP` / `exportMPS` / `exportSol` / `LogToConsole` / `LogFilePath`；其餘欄位（含 `rowRead` / `workMemory` / `nodeFileInd` 與 20 餘個 tuning 旋鈕）一個不少
 - [ ] AC3：`ConfigSnapshot.From(cplexConfig)` 產出的 `SolverSpecific` **不再出現**上述 6 個 key；`Experiments/*.json` 同步變乾淨
 - [ ] AC4：`ProjectConfig` 每個屬性可單獨設定，沒設到的各自套預設值；預設值等同今天的行為（`EnableSolverLog = true`、三個 `Export* = false`）
-- [ ] AC5：兩個 `UseConfig` 都不呼叫時，`Template` 的 `dotnet run` 輸出與本規格實作前**逐字相同**（專案名、log 檔名規則、LP/MPS/Sol 是否產出、七個資料夾位置）
+- [ ] AC5：兩個 `UseConfig` 都不呼叫時，框架範本 `Templates/Sudoku_SHC279` 與 `Templates/FJSP_BASIC_BRICK` 的 `dotnet run` 輸出與本規格實作前**逐字相同**（Status、目標值、log 檔名規則、LP/MPS/Sol 是否產出）
 - [ ] AC6：`ProjectConfig.ProjectName` 與 ctor 參數同時存在時 **ctor 參數優先**（保住 `new OptModel(Dataload.PuzzleName)` 寫法）；`RetentionDays` 同規則
-- [ ] AC7：既有 31 個呼叫點遷移後全數 build 通過；**遷移前**它們應如預期出現 `CS0117`（fail-loud，不得有任何呼叫點安靜地改變行為）
+- [ ] AC7：框架 solution 內 12 個呼叫點遷移後 `dotnet build OptimFoundation.sln` 0 error；**遷移前**它們應如預期出現 `CS0117`（fail-loud，不得有任何呼叫點安靜地改變行為）
 - [ ] AC8：OptimFoundation 既有 xUnit 全數通過（現況 69 個），並新增涵蓋「設定解析順序」與「snapshot 不含輸出開關」的測試
-- [ ] AC9：`Template` 的 `dotnet run` 目標值仍為 158、七條限制式條數仍為 93/155/5/125/305/5/5；`dotnet run -- experiment` 7 個 trial 全 Optimal
+- [ ] AC9：`AI-Modeling/dlls/` **未被更動**（六個 DLL 的檔案時間戳與本規格開工前一致）；`AI-Modeling/Projects/*` 8 個專案 build + run 結果與 `AI-Modeling/baseline/BASELINE.md` 完全一致——證明本規格對 AI-Modeling 端零影響
 - [ ] AC10：`OptimFoundation.Gurobi` 編譯通過且行為不變（只做機械修正）
-- [ ] AC11：文件同步完成，`/harness-eval milp-model` 不退步
 
 ## Module Interactions
 
@@ -77,13 +76,20 @@ modules: [framework-core, framework-cplex, template, projects-migration, docs]
   - `OptModel.cs`：`UseConfig` 兩 overload、ctor 副作用延後、`Execute()` 內解析設定並把 `ProjectConfig` 交給 `OptEngine`
 - **OptimFoundation.Gurobi**（僅機械修正）
   - `GurobiConfig.cs`：`LogToConsole` / `LogFilePath` 由介面實作降級為自有屬性
-- **遷移對象（31 個 `.cs`）**
-  - `AI-Modeling/Projects/*`：ClinicVitamin、FactorioOptimization、GlassFactory、HospitalRostering_Generator、HospitalRostering_Manual、MaxWeightIndependentSet、SandwichProduction、WeeniesBuns（各 `Program.cs` + `ExperimentRunner.cs`）
-  - `AI-Modeling/Template/Program.cs`
-  - `OptimFoundation/Templates/*`：FJSP_BASIC_BRICK、Sudoku_SHC279、Template_CPLEX（5 檔）、Tutorial（2 檔）
-  - `tests/OptimFoundation.Cplex.Tests/Integration/*`：3 檔
-- **文件**：`$FW` 3 份 + `$OPT` 的 `CPLEX_API_REFERENCE.md` §4、`tuning/CLAUDE.md`、`claudemdTemplate/`、`interactive/phase-2-coding.md`、`tutorial/*`
-- **DLL 發佈**：rebuild → 覆蓋 `$OPT/AI-Modeling/dlls/OptimFoundation.Core.dll`、`OptimFoundation.Cplex.dll`
+- **遷移對象（框架 solution 內 12 個 `.cs`，全部相對於 `$OPT/OptimFoundation/OptimFoundation/`）**
+  - `Templates/FJSP_BASIC_BRICK/Program.cs`
+  - `Templates/Sudoku_SHC279/Program.cs`
+  - `Templates/Template_CPLEX/Program.cs`
+  - `Templates/Template_CPLEX/CrossExperiment.cs`
+  - `Templates/Template_CPLEX/ExperimentDemo.cs`
+  - `Templates/Template_CPLEX/RosteringProblem.cs`
+  - `Templates/Template_CPLEX/RosteringProblemOptModel.cs`
+  - `Templates/Tutorial/Program.cs`
+  - `Templates/Tutorial/ExperimentRunner.cs`
+  - `tests/OptimFoundation.Cplex.Tests/Integration/ExperimentIntegrationTests.cs`
+  - `tests/OptimFoundation.Cplex.Tests/Integration/OptEngineIntegrationTests.cs`
+  - `tests/OptimFoundation.Cplex.Tests/Integration/SolverParamCoverageTests.cs`
+- **NOT 本規格**：`AI-Modeling/**`（含 `dlls/`、`Projects/*`、`Template/`、所有 `.md`）→ 見遷移規格
 
 ## API Design
 
@@ -237,7 +243,7 @@ var projectConfig = new ProjectConfig { EnableSolverLog = true, ExportSol = true
 using var m = new OptModel("X").UseConfig(() => projectConfig).UseConfig(() => solverConfig) …
 ```
 
-31 個檔案同型修改 → 適合派 `batch-worker`（pattern 明確、before/after 清楚）。
+本規格範圍內是 **12 個檔案**同型修改（框架 solution 內）。`AI-Modeling` 的 17 檔用同一個 pattern，但在遷移規格處理，且會與 runner 對稱化合併成同一刀，避免同批檔案改兩次。
 
 ## Edge Cases & Error Handling
 
@@ -309,14 +315,10 @@ using var m = new OptModel("X").UseConfig(() => projectConfig).UseConfig(() => s
 - [ ] I2：ctor 的 `SetLogFileName` / `PurgeOutputs` 副作用搬到 `Execute()`
 - [ ] I3：`OptEngine` 143/230/238/246 四行改讀 `ProjectConfig`（下游 223/253/767 不動）
 - [ ] I4：`CplexConfig` 刪 6 個成員；`ISolverConfig` 刪 2 個成員；`GurobiConfig` 補回自有屬性（機械修正）
-- [ ] I5：修 framework 內部與 `tests/*`（3 檔）的呼叫點 → solution build 通過
+- [ ] I5：遷移框架 solution 內 12 個呼叫點（清單見 Module Interactions）→ `dotnet build OptimFoundation.sln` 0 error
 - [ ] I6：跑 xUnit（AC8），新增「解析順序」與「snapshot 不含輸出開關」測試
-- [ ] I7：rebuild Core + Cplex → 更新 `$OPT/AI-Modeling/dlls/` + `VERSION.txt`
-- [ ] I8：`AI-Modeling/Template/Program.cs` 改雙 config，驗 AC5 / AC9
-- [ ] I9：遷移 `AI-Modeling/Projects/*` 16 檔 + `OptimFoundation/Templates/*` 9 檔（派 `batch-worker`，pattern 見 Migration）
-- [ ] I10：抽 `Projects/HospitalRostering_Generator` 實跑，確認結果與遷移前一致
-- [ ] I11：同步文件（含修正 `CPLEX_API_REFERENCE.md` §4 的 `enableLog` 預設值錯誤）
-- [ ] I12：跑 `/harness-eval milp-model` 回歸
+- [ ] I7：`Templates/Sudoku_SHC279` 與 `Templates/FJSP_BASIC_BRICK` 實跑，驗 AC5
+- [ ] I8：確認 `AI-Modeling/dlls/` 六個 DLL 時間戳未變、8 個練習專案跑出的結果與 `baseline/BASELINE.md` 一致（驗 AC9）
 
 ## References
 

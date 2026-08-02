@@ -31,24 +31,28 @@ description: MILP 數學模型開發 orchestrator——三階段 phase gate（Mo
 
 1. 讀 `$FW/MILP Model/Model Design/CLAUDE.md`
 2. 走 4 階段降維（去故事化+單位 → 語義判別+Terminology 表 → SET/PARAM/VAR/CONSTRAINT/OBJ 抽取 → 建模自驗）產 `Model/<Project>_Model.md`（LaTeX，constraint 標 pattern tag，手法查 `linearization-patterns.md`）
-3. 術語不清 → 查 `Model/Glossary.md`，查無就**追問**（NEVER 猜）；預設慣例表內項目直接套用並列入「已套用假設」
+3. 術語不清 → 查 `Model/<Project>_Model.md` 的 Terminology Mapping Table，查無就**追問**（NEVER 猜），確認後回填同一張表；NEVER 另建 `Glossary.md`。預設慣例表內項目直接套用並列入「已套用假設」
 4. 交付模型 + 假設清單，**停下等 gate**：使用者說「模型確認」/「開始實作」才進 Phase 2
 5. 更新 `status.json`
 
 ## Phase 2 · Foundation Coding（純機械轉譯）
 
 1. 讀 `$FW/MILP Model/Foundation Coding/CLAUDE.md`
-2. 依轉譯順序逐條翻譯 Model.md：Parameter → Dataload → Variable → Constraint → Objective → Program.cs（`CreateVariables` + `BuildModel` local function，不另開包裝類別）
-3. 轉譯中發現 Model.md 歧義 → **立即停止**回 Phase 1，NEVER 自行假設
-4. `dotnet build` → fix loop ≤ 5 次 → `dotnet run` → 解驗證協定（Status 三分診斷 → 可行性代回 → 單位一致 → LP bound sanity，見 Foundation Coding）
-5. 回報：build 結果、目標值、解摘要、輸出檔位置；更新 `status.json`
+2. 依轉譯順序逐條翻譯 Model.md：Set / Parameter → Dataload → Variable → Constraint → Objective → Program.cs；在 `Program.cs` 直接逐項註冊 `.AddVariables(...)` / `.AddObjective(...)` / `.AddConstraints(...)`，不新增純轉呼叫 class 或 local function
+3. Objective / Constraint constructor 只收實際使用的 Set、Parameter、scalar 與 `OptEngine`，NEVER 接整包 `Dataload`；材料依賴在 `Program.cs` 顯式傳入
+4. 用 `ProjectConfig` 表達專案名 / retention / solver log / exports，用 `CplexConfig` 表達 solver 旋鈕；模型交給 `OptProject` 求解，`OnSolved` 只掛 runner
+5. 轉譯中發現 Model.md 歧義 → **立即停止**回 Phase 1，NEVER 自行假設
+6. `dotnet build` → fix loop ≤ 5 次 → `dotnet run` → 解驗證協定（Status 三分診斷 → 可行性代回 → 單位一致 → LP bound sanity，見 Foundation Coding）
+7. 回報：build 結果、目標值、解摘要、輸出檔位置；更新 `status.json`
 
 ## Phase 3 · Foundation Tuning（使用者提出才做）
 
 1. 讀 `$FW/MILP Model/Foundation Tuning/CLAUDE.md`
 2. 正確性 gate → 判定觸發類型（solver / data / structure）→ 走對應入口
-3. 每輪用 Experiment API 記錄，回報 before/after 指標
-4. 影響語意的變更同步 Model.md；更新 `status.json`
+3. 把 `Program.cs` 的 `productionBaseline` 視為唯一 champion；每輪用 `Clone()` 建立具體 config variants，共用一份已載入且視為唯讀的 data，以新 `<Project>-tuning-r<N>` 執行 `OptExperiment`
+4. 讀本輪 `Trial.Config` + `Trial.Metrics`，依 Foundation Tuning 的 eligibility / variability / hold-out gate 選 champion；通過才把完整設定明確寫回 `productionBaseline`，並同步 baseline provenance 與根目錄 `TuningHistory.md`（experiment、Trial、config diff、證據），下一輪從新 baseline 出發
+5. promotion 後 MUST build + 跑無參數 production，通過 `OnSolved` / `ValidateRules` 與 before/after 驗收才算完成，並把驗證補回同一筆 history；失敗保留原 baseline並記錄 rejected。沒有可靠勝者時也要記錄 retain 與證據
+6. 影響語意的變更同步 Model.md；更新 `status.json`
 
 ## status.json（進度檔，放專案根）
 
@@ -58,9 +62,16 @@ description: MILP 數學模型開發 orchestrator——三階段 phase gate（Mo
   "modelConfirmed": false,
   "buildOk": false,
   "solveVerified": false,
+  "tuningRound": 0,
+  "productionBaseline": "initial | <round-label>",
+  "baselineSourceExperiment": "<experiment-name> | initial",
+  "baselineSourceTrial": "<trial-label> | initial",
+  "promotionVerified": false,
   "updated": "YYYY-MM-DD"
 }
 ```
+
+Phase 3 每輪更新 `tuningRound`；只有 champion 寫回 `productionBaseline` 且無參數 production 驗證通過，才把 `promotionVerified` 設為 `true`。若結論是保留原 baseline，`productionBaseline` 保留原標籤並在交付說明不 promotion 的證據。
 
 使用者說「繼續」→ Step 0 的 resume 表推進，NEVER 重跑已完成 phase。
 
@@ -72,7 +83,7 @@ description: MILP 數學模型開發 orchestrator——三階段 phase gate（Mo
 - [ ] Phase 2 每條 constraint 可逐條對照回 Model.md（LHS/RHS 未動過手腳）
 - [ ] Constraint / Objective 無裸數字
 - [ ] Phase 2 解驗證協定四步通過（代回可行 + 單位一致 + LP bound sanity）
-- [ ] Phase 3 有 Experiment 記錄 + before/after
+- [ ] Phase 3 有 Experiment 記錄 + before/after；champion 已 promotion 到 `productionBaseline` 並通過 production 驗證，或有證據支持保留原 baseline
 - [ ] `status.json` 已更新
 
 ## Fatal

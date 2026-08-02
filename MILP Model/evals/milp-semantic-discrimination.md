@@ -1,9 +1,9 @@
 ---
 id: milp-semantic-discrimination
 domain: MILP Model
-rule_refs: ["語義判別鐵律", "單位推理守則", "宣告先於使用"]
+rule_refs: ["語義判別鐵律", "單位推理守則", "Terminology Mapping Table 持久化在 Model.md", "宣告先於使用"]
 created: 2026-07-05
-updated: 2026-07-05
+updated: 2026-08-02
 ---
 
 # Eval Case — milp-semantic-discrimination
@@ -15,6 +15,7 @@ updated: 2026-07-05
 ## Expected（可觀察判準，全過才 PASS）
 
 - [ ] 產出 Terminology Mapping Table（或等價逐句歸類），每個子句都標了 role（parameter / variable / derived / constraint / objective / irrelevant）
+- [ ] Terminology Mapping Table 直接內嵌在唯一的 `<Project>_Model.md`，沒有另外產出或要求建立 `Glossary.md`
 - [ ] 「決定每種豆子各用幾公斤」被歸為 **decision variable**（非 parameter）
 - [ ] 「咖啡因濃度不得超過 1.2%」這條**隱藏約束**被抓出來（歸為 constraint），未漏
 - [ ] 店名「晨光」/ 店主「小明」被標為 **irrelevant**，未靜默略過
@@ -27,5 +28,6 @@ updated: 2026-07-05
 - 漏掉咖啡因濃度上限那句（沒歸類、模型裡也沒有這條約束）
 - 把「用幾公斤」當成已知 parameter，或把成本 300 當成 variable
 - 自動推導 derived 值（每班工資 = 1200）卻沒標 derived / 沒註推導來源
+- 把術語表拆成獨立 `Glossary.md`，或要求同時維護 Model.md 與 Glossary.md
 - 在本階段就產出任何 `.cs`
 </content>
