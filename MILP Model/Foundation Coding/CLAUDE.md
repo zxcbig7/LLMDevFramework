@@ -1,7 +1,7 @@
 # Foundation Coding — Phase 2 轉譯實作規範
 
 <system_context>
-把已確認的 `Model/<Project>_Model.md` 逐條機械轉譯成 OptimFoundation CPLEX C# 專案。天條見 `../CLAUDE.md`；完整教學版與 API 黑名單見 `../optimfoundation-api-guide.md`；API 簽名以 `$OPT/AI-Modeling/CPLEX_API_REFERENCE.md` 為準。
+把已確認的 `Model/<Project>_Model.md` 逐條機械轉譯成 OptimFoundation CPLEX C# 專案。天條見 `../CLAUDE.md`；完整教學版與 API 黑名單見同層 `optimfoundation-api-guide.md`；API 簽名以 `$OPT/AI-Modeling/CPLEX_API_REFERENCE.md` 為準。
 </system_context>
 
 <critical_notes>
@@ -13,7 +13,7 @@
 - **只用 generator**（`[OptSet<T>]` / `[OptParam]` / `[OptVar]` + `[OptDim]`）—— NEVER 手寫 `: VariableBase` / `: ParameterBase`；Parameter 只用 object initializer 建構，NEVER 用位置式 ctor。
 - **模型組裝只在 `Program.cs`**，也只有它知道 `Dataload`。Objective / Constraint 建構子逐項列出實際依賴，型別用框架實際型別（`Set_Item` / `List<Parameter_X>` / scalar），NEVER 用 `IReadOnlyList<int>` 這種退化型別。`Solution/<Project>Solution.cs` 是唯一可收整包 `Dataload` 的地方。
 - **`OptEngine` 只從 `Build(OptEngine engine)` 進來**，NEVER 進建構子。
-- **Dataload 以「input CSV 已就位」為前提**：`Dataload(IDataSource)` 只允許 `Load(source, name)` 與 `LoadParam<T>(name)` 兩種句子。不規則來源（矩陣、原始報表）用選用的 `Dataload(string rawFile)` + `Export()` 先攤平產 CSV。
+- **Dataload 以「input CSV 已就位」為前提**：`Dataload(IDataSource)` 只允許 `Load(source, name)` 與 `LoadParam<T>(name)` 兩種句子；「就位」指執行檔目錄下的 `Data/`（專案 `Data/*.csv` 由 csproj copy 帶過去）。CSV 還不存在時——不規則來源攤平、或依規格生成 instance——才加 `Dataload(string rawFile)` + `Export()`，且 MUST 寫在同一個 `Data/Dataload.cs`，NEVER 另開 generator 檔或資料夾。`Export()` 寫出的每個名稱 MUST 與 `Dataload(IDataSource)` 讀的逐一對齊（compiler 不檢查，少一顆要到下次求解才炸）；產物落在 bin 的 `Data/`，要當正式 input MUST 搬回專案 `Data/`。
 - 建立變數只用 `engine.BuildVars<T>(sets...)`；界限一律寫成 constraint。
 - 出池只用單參數 `CreateXxx(name)`；右側用 `AddRHS(常數)`。
 - 目標式 MUST 先於 constraints，且是 Model.md `OBJ` 段的逐項轉譯；沒有 OBJ 段 → 停止，退回 Phase 1。
@@ -91,13 +91,13 @@ return project.Execute() ? 0 : 1;
 ## 轉譯順序
 
 1. Set / Parameter（含結構常數）。
-2. `Data/Dataload.cs`（`IDataSource` ctor；不規則來源再加 import ctor + `Export()`）。
+2. `Data/Dataload.cs`（`IDataSource` ctor；CSV 還不存在才加 import ctor + `Export()`）。
 3. Variable。
 4. Constraint 逐條。
 5. ObjectiveFunction。
 6. `Program.cs`：三態分派 + 材料 → 模型 → 環境。
 7. `Solution/<Project>Solution.cs`。
-8. 備妥 `Data/*.csv`（不規則來源先 `dotnet run -- import raw/<file>`）。
+8. 備妥 `Data/*.csv`（不存在先 `dotnet run -- import raw/<file>` 產；import 與求解 MUST 分兩次命令）。
 9. build / fix loop ≤ 5 → `dotnet run` → 解驗證協定。
 
 </paved_path>
@@ -135,9 +135,7 @@ public sealed class Constraint_MaxWorkDays : ConstraintBase
 }
 ```
 
-Model 左邊進 `AddLHS`，右邊進 `AddRHS`；比較方向直接對應 `CreateGreatEqual` / `CreateLessEqual` / `CreateEqual`。NEVER 自行移項。
-
-`ConstraintCount` 已 obsolete，建立群組與數量由 `EngineBase` 自動統計，NEVER 自印。soft variant（`CreateLeSoft` / `CreateGeSoft` / `CreateEqSoft`）只屬 Phase 3 具名 experiment variant。
+Model 左邊進 `AddLHS`，右邊進 `AddRHS`；比較方向直接對應 `CreateGreatEqual` / `CreateLessEqual` / `CreateEqual`。NEVER 自行移項。`ConstraintCount` 已 obsolete，建立群組與數量由 `EngineBase` 自動統計，NEVER 自印。soft variant（`CreateLeSoft` / `CreateGeSoft` / `CreateEqSoft`）只屬 Phase 3 具名 experiment variant。
 
 ## Dataload：只讀已就位的 CSV
 
@@ -153,12 +151,11 @@ public Dataload(IDataSource source)
 }
 ```
 
-白名單外的一切（迴圈、`Random`、日期運算、補值、`if`）只能出現在 `Dataload(string rawFile)` 的 import ctor，且必須先 `Export()` 成 CSV 才進求解。
+白名單外的一切（迴圈、`Random`、日期運算、補值、`if`）只能出現在同檔的 `Dataload(string rawFile)` import ctor——攤平不規則來源與生成 instance 都走它——且必須先 `Export()` 成 CSV 才進求解。`Export()` 末尾 MUST log 產出清單，讓少寫一顆當場看得見。
 
 ## 變數界限走 constraint
 
-`BuildVars<T>` 依前綴推型並固定界限：`VariableB_` 為 `[0,1]`、`VariableX_` / `VariableI_` 為 `[0, 1E100]`。
-Model.md 的 `x ≤ Capacity` 就建一條 `Constraint_Capacity`，NEVER 用 `BuildCVs(lb, ub, ...)` 把界限藏進參數。
+`BuildVars<T>` 依前綴推型並固定界限（`VariableB_` 為 `[0,1]`、`VariableX_` / `VariableI_` 為 `[0, 1E100]`）；Model.md 的 `x ≤ Capacity` 就建一條 `Constraint_Capacity`，NEVER 用 `BuildCVs(lb, ub, ...)` 把界限藏進參數。
 
 ## 取解與驗證
 
@@ -170,7 +167,7 @@ FolderDir.Solution.CreateFolder();
 CsvCtrl.WriteSolution<VariableB_Assign>(engine, "<Project>", "SYSTEM");
 ```
 
-不存在：`GetVarSol`、`GetSetVarSol<T>`、`SaveToCSV<T>`。已禁用：`BuildBVs` / `BuildCVs` / `BuildIVs`、`CreateXxx(rhs, name)`、`LoadCsv`、`LoadInline`、位置式 Parameter ctor。完整黑名單見 `../optimfoundation-api-guide.md` §9。
+不存在：`GetVarSol`、`GetSetVarSol<T>`、`SaveToCSV<T>`。已禁用：`BuildBVs` / `BuildCVs` / `BuildIVs`、`CreateXxx(rhs, name)`、`LoadCsv`、`LoadInline`、位置式 Parameter ctor。完整黑名單見同層 `optimfoundation-api-guide.md` §9。
 
 </patterns>
 
@@ -184,6 +181,8 @@ CsvCtrl.WriteSolution<VariableB_Assign>(engine, "<Project>", "SYSTEM");
 4. LP bound sanity：max 整數解 ≤ LP bound；min 反之。
 
 四步全過並對得上 Model.md 小例才可宣稱完成。
+
+交付時附上 `model-to-code-checklist.md` 供使用者人工核對——NEVER 只憑自己這輪的判斷宣稱 Phase 2 完成。
 
 </verification>
 

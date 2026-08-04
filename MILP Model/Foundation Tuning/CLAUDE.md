@@ -1,7 +1,7 @@
 # Foundation Tuning — Phase 3 調校規範
 
 <system_context>
-模型通過正確性 gate 後才可調校；使用者提出才做。完整旋鈕見 `$OPT/AI-Modeling/tuning/CLAUDE.md`；手動掃描仍不達標或要評估自動調參工具時，讀 `../solver-tuning-research.md`。
+模型通過正確性 gate 後才可調校；使用者提出才做。完整旋鈕見 `$OPT/AI-Modeling/tuning/CLAUDE.md`；手動掃描仍不達標或要評估自動調參工具時，讀同層 `solver-tuning-research.md`。
 </system_context>
 
 <critical_notes>

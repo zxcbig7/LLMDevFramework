@@ -43,7 +43,7 @@ description: MILP 數學模型開發 orchestrator——三階段 phase gate（Mo
 4. 用 `ProjectConfig` 表達專案名 / retention / solver log / exports，用 `CplexConfig` 表達 solver 旋鈕；模型交給 `OptProject` 求解，`OnSolved` 只掛 runner
 5. 轉譯中發現 Model.md 歧義 → **立即停止**回 Phase 1，NEVER 自行假設
 6. `dotnet build` → fix loop ≤ 5 次 → `dotnet run` → 解驗證協定（Status 三分診斷 → 可行性代回 → 單位一致 → LP bound sanity，見 Foundation Coding）
-7. 回報：build 結果、目標值、解摘要、輸出檔位置；更新 `status.json`
+7. 回報：build 結果、目標值、解摘要、輸出檔位置；附上 `$FW/MILP Model/Foundation Coding/model-to-code-checklist.md` 提醒使用者逐項人工核對；更新 `status.json`
 
 ## Phase 3 · Foundation Tuning（使用者提出才做）
 

@@ -33,7 +33,7 @@ MILP / LP / IP 數學模型開發 domain，服務 OptimizationFramework 專案�
 - MUST 模型組裝只在 `Program.cs`（唯一知道 `Dataload` 的地方），平坦分三段：材料 → 模型 → 環境；三態 CLI 為 `import` / `exp` / 預設求解 —— NEVER 用轉呼叫 helper 或 local function 包裝組裝順序
 - MUST `OptEngine` 只從 `Build(OptEngine engine)` 進來 —— NEVER 進建構子 —— Why: 建構子簽名要純粹是資料依賴清單
 - MUST 只用 generator（`[OptSet<T>]` / `[OptParam]` / `[OptVar]` + `[OptDim]`）—— NEVER 手寫 `: VariableBase` / `: ParameterBase`，也 NEVER 用 generator 產的位置式 ctor（改 `[OptDim]` 順序會靜默接錯）
-- MUST `Dataload` 以「input CSV 已就位」為前提，`Dataload(IDataSource)` 只允許 `Load(source, name)` 與 `LoadParam<T>(name)` 兩種句子；不規則來源用選用的 `import` 模式先攤平產 CSV
+- MUST `Dataload` 以「input CSV 已就位」為前提（就位 = 執行檔目錄下的 `Data/`），`Dataload(IDataSource)` 只允許 `Load(source, name)` 與 `LoadParam<T>(name)` 兩種句子；CSV 還不存在時（攤平不規則來源、或依規格生成 instance）用選用的 `import` 模式先產 CSV，import ctor MUST 與它同在 `Data/Dataload.cs`，且 import 與求解分兩次命令
 - Objective / Constraint 建構子 NEVER 收整包 `Dataload`；`Solution/<Project>Solution.cs` 的解讀層不在此限（`ValidateRules` 本來就要對照全部原始資料）
 
 ## 數學一致性（天條）
@@ -57,12 +57,13 @@ MILP / LP / IP 數學模型開發 domain，服務 OptimizationFramework 專案�
 
 <file_map>
 MILP Model/CLAUDE.md - 本檔（天條）
-optimfoundation-api-guide.md - 端到端 API 開發規範（建專案 → 資料/變數/模型層 → Program.cs 組裝 → 寫實驗 → 驗收 → API 速查/黑名單）；給人與 AI 照著寫的完整教學版
+Foundation Coding/optimfoundation-api-guide.md - 端到端 API 開發規範（建專案 → 資料/變數/模型層 → Program.cs 組裝 → 寫實驗 → 驗收 → API 速查/黑名單）；給人與 AI 照著寫的完整教學版
 Model Design/CLAUDE.md - Phase 1：4 階段建模法、五段 Model.md（SET/PARAM/VAR/CONSTRAINT/OBJ）、程式轉譯 metadata、建模自驗 gate
 Model Design/linearization-patterns.md - constraint 8 類 canonical form + 非線性→線性 recipe（abs/max/min/fixed-charge/either-or）+ Big-M 鐵律
 Foundation Coding/CLAUDE.md - Phase 2：八資料夾結構、Program.cs 三段組裝、Dataload 讀已就位 CSV、API 速查、禁止 API、解驗證協定
+Foundation Coding/model-to-code-checklist.md - Phase 2 交付後人工核對用 CHK LIST（Model.md ↔ Code 逐條比對，天條轉可勾選項）
 Foundation Tuning/CLAUDE.md - Phase 3：正確性 gate、三方向 tuning、Experiment API、stop conditions
-solver-tuning-research.md - Solver tuning 文獻地圖（reference，非規範）：Algorithm Configuration 四條研究線、configurator 工具、實驗方法論鐵則（performance variability / over-tuning）
+Foundation Tuning/solver-tuning-research.md - Solver tuning 文獻地圖（reference，非規範）：Algorithm Configuration 四條研究線、configurator 工具、實驗方法論鐵則（performance variability / over-tuning）
 evals/ - behavioral eval cases（改本 domain 規範後跑 `/harness-eval milp-model`）
 ../workflow skill/SKILL.md - milp-dev orchestrator skill（部署後觸發「幫我建模」等）
 
